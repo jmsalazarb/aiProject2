@@ -65,6 +65,23 @@ class ValueIterationAgent(ValueEstimationAgent):
           value iteration, V_k+1(...) depends on V_k(...)'s.
         """
         "*** YOUR CODE HERE ***"
+        while self.iterations > 0:
+            tempValues = self.values.copy()
+            allStates = self.mdp.getStates()
+            for state in allStates:
+                allActionsForState = self.mdp.getPossibleActions(state)
+                chanceNodeValues = []
+                for action in allActionsForState:
+                    finalStates = self.mdp.getTransitionStatesAndProbs(state, action)
+                    weightedAverage = 0
+                    for finalState in finalStates:
+                        nextState = finalState[0]
+                        probability = finalState[1]
+                        weightedAverage += (probability * (self.mdp.getReward(state, action, nextState) + (self.discount * tempValues[nextState])))
+                    chanceNodeValues.append(weightedAverage)
+                if len(chanceNodeValues) != 0:
+                    self.values[state] = max(chanceNodeValues)
+            self.iterations -= 1
 
     def getValue(self, state):
         """
@@ -78,7 +95,15 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # returns the Q-value of the (state, action) pair given by the value function given by self.values
+        finalStates = self.mdp.getTransitionStatesAndProbs(state, action)
+        qValue = 0
+        for finalState in finalStates:
+            nextState = finalState[0]
+            probability = finalState[1]
+            qValue = qValue + probability * (self.mdp.getReward(state, action, nextState) + (self.discount*self.values[nextState]))
+        return qValue
+        #util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
         """
@@ -89,8 +114,32 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
+        # computes the best action according to the value function given by self.values
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        #if no legal actions (terminal state):
+        if self.mdp.isTerminal(state):
+            return None
+        
+        #get the actions and break ties if neccessary
+        possibleActions = self.mdp.getPossibleActions(state)
+        # qValueList = []
+        # for action in possibleActions:
+        #     qValue = self.computeQValueFromValues(self, state, action)
+        #     qValueList.append(qValue)
+        #     #vValue = max(qValueList)
+        # vValueIndex = max(qValueList).index()
+        # return possibleActions[vValueIndex]
+        finalAction = ""
+        maxSum = float("-inf")
+        for action in possibleActions:
+            sum = self.computeQValueFromValues(state, action)
+            if (maxSum == 0.0 and action == "") or sum >= maxSum:
+                finalAction = action
+                maxSum = sum
+        return finalAction
+
+
+        #util.raiseNotDefined()
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
